@@ -30,6 +30,14 @@ mkdir /mnt/g/out
 
 ```
 
+I use a RAM disk for /mnt/g/out made by ImDisk for faster output and not wear out my SSD.
+
+https://sourceforge.net/projects/imdisk-toolkit/
+
+Size of PPM image outputs is around 1.2 GiB for one simple match. Can be much
+more for a longer match of course. Compressed output movie from PPMs is around
+10 MiB.
+
 # How to make replay: input.txt
 
 It is input for one player for whole game.
