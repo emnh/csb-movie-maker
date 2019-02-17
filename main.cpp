@@ -34,6 +34,7 @@ void print_move(int, float, Pod*);
 
 constexpr int CP  = 0;
 constexpr int POD = 1;
+constexpr int POD_COUNT = 4;
 constexpr int DEPTH = 6;
 constexpr float SHIELD_PROB = 10;
 constexpr int MAX_THRUST = 200;
@@ -48,6 +49,9 @@ int cp_ct, laps;
 
 Pod* pods[4];
 Checkpoint* cps[10];
+Checkpoint* center;
+
+void (*callback)(Solution* sol, float score) = NULL;
 
 inline int fastrand() {
     static unsigned int g_seed = 42;
@@ -606,27 +610,25 @@ public:
               best = child;
               bestCount++;
               lastBestCount = count;
-            //}
-            //if (TIME >= time - ((time - TIME) * 0.5)) {
-            //if (count >= 100) {''
-              for (int i = 0;  i < 2 * DEPTH; i++) {
-                for (int ccase = 0; ccase < 4; ccase++) {
-                  best.gradientMutateInit(i, ccase);
-                  best.gradientMutate(&child);
-                  while (TIME < time && get_score(&child) > get_score(&best)) {
-                    // cerr << "gradient improve, idx: " << child.lastIndex << ", angle: " << child.angleChange;
-                    // cerr << ", thrust: " << child.thrustChange << endl;
-                    // cerr << "gradient delta, idx: " << child.lastIndex << ", angle: " << child.angles[child.lastIndex];
-                    // cerr << ", thrust: " << child.thrusts[child.lastIndex] << endl;
 
-                    best = child;
-                    bestCount++;
-                    lastBestCount = count;
-                    best.gradientMutate(&child);
-                    gradientCount++;
-                  }
-                }
-              }
+              // for (int i = 0;  i < 2 * DEPTH; i++) {
+              //   for (int ccase = 0; ccase < 4; ccase++) {
+              //     best.gradientMutateInit(i, ccase);
+              //     best.gradientMutate(&child);
+              //     while (TIME < time && get_score(&child) > get_score(&best)) {
+              //       // cerr << "gradient improve, idx: " << child.lastIndex << ", angle: " << child.angleChange;
+              //       // cerr << ", thrust: " << child.thrustChange << endl;
+              //       // cerr << "gradient delta, idx: " << child.lastIndex << ", angle: " << child.angles[child.lastIndex];
+              //       // cerr << ", thrust: " << child.thrusts[child.lastIndex] << endl;
+              //
+              //       best = child;
+              //       bestCount++;
+              //       lastBestCount = count;
+              //       best.gradientMutate(&child);
+              //       gradientCount++;
+              //     }
+              //   }
+              // }
             }
         }
         cerr << "count: " << count << ", bestCount: " << bestCount << ", lastBestCount: " << lastBestCount;
@@ -657,6 +659,11 @@ public:
             turn++;
         }
         score += 0.9*evaluate();
+
+        if (callback != NULL) {
+          (*callback)(sol, score);
+        }
+
         load();
 
         if (r > 0) sols_ct++;
@@ -671,7 +678,10 @@ public:
         //Pod* opp_blocker = blocker(pods[(id+2) % 4], pods[(id+3) % 4]);
 
         float score = my_runner->score() - opp_runner->score();
+        score -= 0.1 * my_runner->dist(center);
+
         score -= my_blocker->dist(opp_runner);
+        score -= 0.5 * my_blocker->dist(cps[opp_runner->ncpid]);
 
         return score;
     }
@@ -754,6 +764,9 @@ void print_move(int thrust, float angle, Pod* pod) {
 #ifndef EXCLUDE_MAIN
 
 int main() {
+
+    center = new Checkpoint(0, 16000 / 2, 9000 / 2);
+
     cin >> laps >> cp_ct;
     for (int i = 0; i < cp_ct; i++) {
         int cx, cy;
@@ -784,6 +797,11 @@ int main() {
             cin >> x >> y >> vx >> vy >> angle >> ncpid;
             if (r == 0 && i > 1 && angle > -1) is_p2 = true;
             pods[i]->update(x, y, vx, vy, angle, ncpid);
+        }
+
+        if (cin.eof()) {
+          cerr << "EOF" << endl;
+          break;
         }
 
         now = high_resolution_clock::now();
