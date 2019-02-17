@@ -44,5 +44,5 @@ java -jar cg-brutaltester.jar -o -r "coders-strike-back-referee/coders-strike-ba
 Then parse judge logs to a suitable format:
 
 ```
-./parse.sh < logs/game1.txt > input.txt
+./parselog.sh logs/game1.log > input.txt
 ```
