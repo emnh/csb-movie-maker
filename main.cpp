@@ -393,6 +393,10 @@ public:
     int thrusts[DEPTH*2];
     float angles[DEPTH*2];
 
+    int lastIndex;
+    int thrustChange;
+    float angleChange;
+
     Solution(bool with_rnd = false) {
         if (with_rnd) randomize();
     }
@@ -407,6 +411,49 @@ public:
         randomize(DEPTH-1, true);
         randomize(2*DEPTH-1, true);
         score = -1;
+    }
+
+    void gradientMutate() {
+        int idx = lastIndex;
+        angles[idx] = max(-18.0f, min(18.0f, angles[idx] + angleChange));
+        thrusts[idx] = max(-1, min(MAX_THRUST, thrusts[idx] + thrustChange));
+    }
+
+    void gradientMutate(Solution* child) {
+        copy(begin(angles), end(angles), begin(child->angles));
+        copy(begin(thrusts), end(thrusts), begin(child->thrusts));
+
+        child->lastIndex = lastIndex;
+        child->thrustChange = thrustChange;
+        child->angleChange = angleChange;
+
+        child->gradientMutate();
+        child->score = -1;
+    }
+
+    void gradientMutateInit(int lastIndex, int ccase) {
+      // lastIndex = rnd(2 * DEPTH);
+      // int ccase = rnd(4);
+      this->lastIndex = lastIndex;
+
+      switch (ccase) {
+        case 0:
+          thrustChange = -1;
+          angleChange = 0.0;
+          break;
+        case 1:
+          thrustChange = 1;
+          angleChange = 0.0;
+          break;
+        case 2:
+          thrustChange = 0;
+          angleChange = 1.0;
+          break;
+        case 3:
+          thrustChange = 0;
+          angleChange = -1.0;
+          break;
+      }
     }
 
     void mutate() {
@@ -548,10 +595,42 @@ public:
         get_score(&best);
 
         Solution child;
+        int count = 0;
+        int bestCount = 0;
+        int lastBestCount = 0;
+        int gradientCount = 0;
         while (TIME < time) {
+            count++;
             best.mutate(&child);
-            if (get_score(&child) > get_score(&best)) best = child;
+            if (get_score(&child) > get_score(&best)) {
+              best = child;
+              bestCount++;
+              lastBestCount = count;
+            //}
+            //if (TIME >= time - ((time - TIME) * 0.5)) {
+            //if (count >= 100) {''
+              for (int i = 0;  i < 2 * DEPTH; i++) {
+                for (int ccase = 0; ccase < 4; ccase++) {
+                  best.gradientMutateInit(i, ccase);
+                  best.gradientMutate(&child);
+                  while (TIME < time && get_score(&child) > get_score(&best)) {
+                    // cerr << "gradient improve, idx: " << child.lastIndex << ", angle: " << child.angleChange;
+                    // cerr << ", thrust: " << child.thrustChange << endl;
+                    // cerr << "gradient delta, idx: " << child.lastIndex << ", angle: " << child.angles[child.lastIndex];
+                    // cerr << ", thrust: " << child.thrusts[child.lastIndex] << endl;
+
+                    best = child;
+                    bestCount++;
+                    lastBestCount = count;
+                    best.gradientMutate(&child);
+                    gradientCount++;
+                  }
+                }
+              }
+            }
         }
+        cerr << "count: " << count << ", bestCount: " << bestCount << ", lastBestCount: " << lastBestCount;
+        cerr << ", gradientCount: " << gradientCount << endl;
         sol = best;
     }
 
@@ -589,7 +668,7 @@ public:
         Pod* my_runner = runner(pods[id], pods[id+1]);
         Pod* my_blocker = blocker(pods[id], pods[id+1]);
         Pod* opp_runner = runner(pods[(id+2) % 4], pods[(id+3) % 4]);
-        Pod* opp_blocker = blocker(pods[(id+2) % 4], pods[(id+3) % 4]);
+        //Pod* opp_blocker = blocker(pods[(id+2) % 4], pods[(id+3) % 4]);
 
         float score = my_runner->score() - opp_runner->score();
         score -= my_blocker->dist(opp_runner);
@@ -659,7 +738,7 @@ void print_move(int thrust, float angle, Pod* pod) {
     float px = pod->x + cos(a) * 10000.0;
     float py = pod->y + sin(a) * 10000.0;
 
-    const char* msg = "ehlo";
+    const char* msg = "...";
     if (thrust == -1) {
         printf("%d %d SHIELD %s\n", (int) round(px), (int) round(py), msg);
         pod->shield = 4;
@@ -670,6 +749,9 @@ void print_move(int thrust, float angle, Pod* pod) {
         printf("%d %d %d %s\n", (int) round(px), (int) round(py), thrust, msg);
     }
 }
+
+
+#ifndef EXCLUDE_MAIN
 
 int main() {
     cin >> laps >> cp_ct;
@@ -721,3 +803,5 @@ int main() {
         print_move(me.sol.thrusts[DEPTH], me.sol.angles[DEPTH], pods[1]);
     }
 }
+
+#endif
