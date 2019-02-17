@@ -11,10 +11,10 @@ https://github.com/robostac/coders-strike-back-referee .
 # Explanation of weird paintball lines seen in movie
 
  - MadKnight  03:24PM: just tell me what are those weird lines emh
- - emh: MadKnight those are a few pixels colored at the point the pod would be for every solution evaluated
-   6 turns ahead that is
-   or whatever depth you use
-   supposed to help to visualize how your bot "thinks"
+ - emh: MadKnight those are a few pixels colored at the point the pod would be for every solution evaluated.
+   6 turns ahead that is.
+   or whatever depth you use.
+   supposed to help to visualize how your bot "thinks".
  - emh 03:32PM
   it's drawn by https://github.com/emnh/csb-movie-maker/blob/master/img.cpp#L145
   which is called by https://github.com/emnh/csb-movie-maker/blob/master/main.cpp#L664
